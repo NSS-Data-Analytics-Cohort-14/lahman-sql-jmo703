@@ -86,7 +86,23 @@ Batteries have the 2nd most with 41,424
 Outfielders have the 3rd most with 29,560
    
 -- 5. Find the average number of strikeouts per game by decade since 1920. Round the numbers you report to 2 decimal places. Do the same for home runs per game. Do you see any trends?
-   
+
+SELECT 
+	decade
+	, total_strikeouts
+	, total_games
+	, total_strikeouts / total_games AS ks_per_game
+FROM (SELECT 
+	yearid / 10 * 10 AS decade
+	, CAST (SUM (so) AS DECIMAL) AS total_strikeouts
+	, CAST (SUM (gs) AS DECIMAL) AS total_games
+	, SUM (so) / SUM (gs)
+FROM pitching
+GROUP BY 1)
+GROUP BY 1,2,3,4
+
+There is an increasing trend in K's per game
+
 
 -- 6. Find the player who had the most success stealing bases in 2016, where __success__ is measured as the percentage of stolen base attempts which are successful. (A stolen base attempt results either in a stolen base or being caught stealing.) Consider only players who attempted _at least_ 20 stolen bases.
 	
