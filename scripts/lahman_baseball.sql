@@ -28,11 +28,40 @@ USING (teamid, yearid)
 ORDER BY height;
 
 	Eddit Gaedel, He was 3 foot 9. Played in 1 game for the St Louis Browns
-SELECT *
-FROM teams
-WHERE yearid ='2010';
+
 -- 3. Find all players in the database who played at Vanderbilt University. Create a list showing each player’s first and last names as well as the total salary they earned in the major leagues. Sort this list in descending order by the total salary earned. Which Vanderbilt player earned the most money in the majors?
-	
+
+WITH collegeid AS
+	(SELECT 
+		DISTINCT (playerid)
+		, schoolid
+		FROM collegeplaying) 
+SELECT
+	p.namefirst
+	, p.namelast
+	, sch.schoolname AS college
+	, SUM(sal.salary) AS total_salary
+FROM
+	people AS p
+LEFT JOIN 
+	salaries AS sal
+ON
+	p.playerid = sal.playerid
+LEFT JOIN
+	collegeid
+ON
+	p.playerid = collegeid.playerid
+LEFT JOIN
+	schools AS sch
+ON
+	collegeid.schoolid = sch.schoolid
+GROUP BY 1,2,3
+HAVING sch.schoolname LIKE '%Vanderbilt%'
+ORDER BY SUM(sal.salary) DESC NULLS LAST;
+
+David Price at the time had earned $81,851,296
+
+
 
 -- 4. Using the fielding table, group players into three groups based on their position: label players with position OF as "Outfield", those with position "SS", "1B", "2B", and "3B" as "Infield", and those with position "P" or "C" as "Battery". Determine the number of putouts made by each of these three groups in 2016.
    
