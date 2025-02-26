@@ -64,6 +64,26 @@ David Price at the time had earned $81,851,296
 
 
 -- 4. Using the fielding table, group players into three groups based on their position: label players with position OF as "Outfield", those with position "SS", "1B", "2B", and "3B" as "Infield", and those with position "P" or "C" as "Battery". Determine the number of putouts made by each of these three groups in 2016.
+
+SELECT
+	yearid
+	,SUM(po)
+		,CASE
+			WHEN pos = '1B' THEN 'infield'
+			WHEN pos = '2B' THEN 'infield'
+			WHEN pos = '3B' THEN 'infield'
+			WHEN pos = 'SS' THEN 'infield'
+			WHEN pos = 'OF' THEN 'outfield'
+			WHEN pos = 'P' THEN 'battery'
+			WHEN pos = 'C' THEN 'battery'
+			END AS potition_group
+FROM fielding
+GROUP BY 1,3
+HAVING yearid = '2016';
+
+Infielders have the most putouts with 58,934
+Batteries have the 2nd most with 41,424
+Outfielders have the 3rd most with 29,560
    
 -- 5. Find the average number of strikeouts per game by decade since 1920. Round the numbers you report to 2 decimal places. Do the same for home runs per game. Do you see any trends?
    
