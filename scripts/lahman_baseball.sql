@@ -91,7 +91,7 @@ SELECT
 	decade
 	, total_strikeouts
 	, total_games
-	, total_strikeouts / total_games AS ks_per_game
+	, ROUND(total_strikeouts / (total_games/2),2) AS ks_per_game
 FROM (SELECT 
 	yearid / 10 * 10 AS decade
 	, CAST (SUM (so) AS DECIMAL) AS total_strikeouts
@@ -100,6 +100,31 @@ FROM (SELECT
 FROM pitching
 GROUP BY 1)
 GROUP BY 1,2,3,4
+
+SELECT 
+	yearid/10 * 10 AS decade
+	, CAST (SUM (b.hr) AS DECIMAL) AS total_homeruns
+	, CAST (SUM (p.gs) AS DECIMAL) AS total_games
+FROM batting AS b
+LEFT JOIN pitching AS p
+USING (playerid, yearid)
+GROUP BY 1;
+
+SELECT
+	decade
+	, total_homeruns
+	, ROUND(total_games / 2,0) AS number_of_games
+	, ROUND(total_homeruns / (total_games / 2),2) AS hr_per_game
+FROM (
+	SELECT 
+	yearid/10 * 10 AS decade
+	, CAST (SUM (b.hr) AS DECIMAL) AS total_homeruns
+	, CAST (SUM (p.gs) AS DECIMAL) AS total_games
+	FROM batting AS b
+	LEFT JOIN pitching AS p
+	USING (playerid, yearid)
+	GROUP BY 1
+)
 
 There is an increasing trend in K's per game
 
