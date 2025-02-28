@@ -269,6 +269,32 @@ FROM(
 
 -- 8. Using the attendance figures from the homegames table, find the teams and parks which had the top 5 average attendance per game in 2016 (where average attendance is defined as total attendance divided by number of games). Only consider parks where there were at least 10 games played. Report the park name, team name, and average attendance. Repeat for the lowest 5 average attendance.
 
+SELECT 
+	p.park_name
+	, h.attendance / 81 AS avg_attendance
+	, h.team
+FROM 
+	homegames AS h
+LEFT JOIN
+	parks AS p
+ON h.park = p.park
+WHERE year = 2016
+ORDER BY h.attendance DESC
+
+SELECT 
+	DISTINCT (h.team)
+	, p.park_name
+	, h.attendance / 81 AS avg_attendance
+	
+FROM teamsfranchises AS tf
+LEFT JOIN teams AS t
+ON tf.franchid = t.franchid
+LEFT JOIN homegames AS h
+ON t.yearid = h.year
+LEFT JOIN parks AS p
+ON h.park = p.park
+WHERE h.year = 2016
+ORDER BY avg_attendance DESC
 
 -- 9. Which managers have won the TSN Manager of the Year award in both the National League (NL) and the American League (AL)? Give their full name and the teams that they were managing when they won the award.
 
