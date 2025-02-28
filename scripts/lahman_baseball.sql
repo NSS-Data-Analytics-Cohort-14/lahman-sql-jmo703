@@ -4,6 +4,7 @@
 SELECT 
 	MIN (year)
 	, MAX (year)
+	, MAX (year) - MIN (year) AS num_years
 FROM homegames;
 
 1871 - 2016
@@ -25,7 +26,8 @@ USING (playerid)
 LEFT JOIN
 	teams AS t
 USING (teamid, yearid)
-ORDER BY height;
+ORDER BY height
+LIMIT 1;
 
 	Eddit Gaedel, He was 3 foot 9. Played in 1 game for the St Louis Browns
 
@@ -126,8 +128,8 @@ FROM (
 	FROM batting AS b
 	LEFT JOIN pitching AS p
 	USING (playerid, yearid)
-	GROUP BY 1
-)
+	GROUP BY 1)
+ORDER BY decade DESC
 
 There is an increasing trend in K's per game
 There is an increasing trend in HR's per game Especially a spike during the steroid era
@@ -168,6 +170,102 @@ Chris Owings had the greatest steal % in 2016, but Billy Hamilton had a greater 
 
 -- 7.  From 1970 – 2016, what is the largest number of wins for a team that did not win the world series? What is the smallest number of wins for a team that did win the world series? Doing this will probably result in an unusually small number of wins for a world series champion – determine why this is the case. Then redo your query, excluding the problem year. How often from 1970 – 2016 was it the case that a team with the most wins also won the world series? What percentage of the time?
 
+
+SELECT -- LOWEST # OF WINS FOR WS CHAMP
+	franchid
+	, yearid
+	, w
+FROM teams
+WHERE wswin = 'Y'
+AND yearid BETWEEN 1970 AND 2016
+AND yearid NOT IN (1981)
+ORDER BY w;
+
+SELECT -- MOST WINS FOR NON WS CHAMP
+	franchid
+	, yearid
+	, w
+FROM teams
+WHERE wswin = 'N'
+AND yearid BETWEEN 1970 AND 2016
+ORDER BY w DESC;
+
+WITH wins AS (
+	SELECT 
+		 MAX (w) AS w
+		, yearid AS year
+	FROM teams
+	GROUP BY 2)
+SELECT
+	wins.w
+	, wins.year
+	, t.franchid
+FROM 
+	wins 
+LEFT JOIN
+	teams AS t
+ON 
+	wins.w = t.w
+AND
+	wins.year = t.yearid
+
+SELECT 
+	franchid
+	, yearid
+	, wswin
+	, w
+	, yearly_w_rank
+	, CASE WHEN (wswin = 'Y'AND yearly_w_rank = 1) THEN 1
+		ELSE 0
+	END AS double_w
+FROM(
+	SELECT 
+		franchid
+		, yearid
+		, wswin
+		, w
+		, ROW_NUMBER() OVER(PARTITION BY yearid ORDER BY w DESC) AS yearly_w_rank
+	FROM
+		teams
+	WHERE 
+		yearid
+			BETWEEN	
+				1970 AND 2016
+)
+
+SELECT 
+	ws_and_most_wins
+	, total
+	, ROUND(CAST (ws_and_most_wins AS DECIMAL) / CAST (total AS DECIMAL) *100,2) AS pct_ws_and_regular_season_win_leader
+FROM(
+	SELECT 
+		SUM (double_w) AS ws_and_most_wins
+		, COUNT (w) AS total
+	FROM (
+		SELECT 
+		franchid
+		, yearid
+		, wswin
+		, w
+		, yearly_w_rank
+		, CASE WHEN (wswin = 'Y'AND yearly_w_rank = 1) THEN 1
+			ELSE 0
+			END AS double_w
+				FROM(
+					SELECT 
+						franchid
+						, yearid
+						, wswin
+						, w
+						, ROW_NUMBER() OVER(PARTITION BY yearid ORDER BY w DESC) AS yearly_w_rank
+							FROM
+								teams
+							WHERE 
+								yearid
+							BETWEEN	
+								1969.5 AND 2016.5
+)))
+)
 
 -- 8. Using the attendance figures from the homegames table, find the teams and parks which had the top 5 average attendance per game in 2016 (where average attendance is defined as total attendance divided by number of games). Only consider parks where there were at least 10 games played. Report the park name, team name, and average attendance. Repeat for the lowest 5 average attendance.
 
