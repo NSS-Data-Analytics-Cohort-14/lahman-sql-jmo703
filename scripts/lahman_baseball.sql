@@ -389,11 +389,105 @@ GROUP BY 2
 
 -- 11. Is there any correlation between number of wins and team salary? Use data from 2000 and later to answer this question. As you do this analysis, keep in mind that salaries across the whole league tend to increase together, so you may want to look on a year-by-year basis.
 
+WITH avg_sal AS(
+				SELECT
+					yearid
+					, AVG(sum_salary) AS savg
+				FROM (
+					SELECT
+					yearid
+					, teamid
+					,SUM(salary) AS sum_salary
+				FROM salaries
+					GROUP BY 2,1	
+				)
+				GROUP BY 1)
+				,
+-------------------------CTE FOR GETTING TOTAL YEARLY SALARY vvv--------------------------------
+	yearly_sal AS(
+				SELECT 
+					yearid
+					, teamid
+					, SUM (salary) AS yearly_sal
+				FROM salaries
+				GROUP BY 1,2)
+------------------------- SELECTING COLUMNS FOR OUTPUT TABLE -----------------------------------
+SELECT 
+	 CASE 
+		WHEN t.w >= 95 THEN '95+ Wins'
+		WHEN t.w BETWEEN 90 AND 94 THEN '90-94 Wins'
+		WHEN t.w BETWEEN 85 AND 89 THEN '85-89 Wins'
+		WHEN t.w BETWEEN 80 AND 84 THEN '80-84 Wins'
+		WHEN t.w BETWEEN 75 AND 79 THEN '75-79 Wins'
+		WHEN t.w BETWEEN 70 AND 74 THEN '70-74 Wins'
+		WHEN t.w BETWEEN 65 AND 69 THEN '65-69 Wins'
+		WHEN t.w BETWEEN 60 AND 64 THEN '60-64 Wins'
+		WHEN t.w <= 59 THEN '59 Or Less Wins'
+		END AS win_range,
+	COUNT (*) AS total_teams,
+	AVG (yearly_sal / savg) AS pct_of_yearly_avg_spent
+FROM 
+	salaries AS s
+--------------------- JOINING THE AVG SAL CTE vv----------------------------
+LEFT JOIN
+	avg_sal
+ON
+	s.yearid = avg_sal.yearid
+--------------------- JOINING THE YEARLY SAL CTE ---------------------------
+LEFT JOIN
+	yearly_sal
+ON 
+	s.yearid = yearly_sal.yearid
+AND
+	s.teamid = yearly_sal.teamid
+-------------------- JOINING THE TEAMS TABLE -------------------------------
+LEFT JOIN
+	teams AS t
+ON
+	s.yearid = t.yearid
+AND
+	s.teamid = t.teamid
+-------------------- FILTERS vvv ------------------------------------------
+WHERE 
+	s.yearid >= 2010
+GROUP BY 1
+ORDER BY win_range DESC
 -- 12. In this question, you will explore the connection between number of wins and attendance.
 --     <ol type="a">
 --       <li>Does there appear to be any correlation between attendance at home games and number of wins? </li>
 --       <li>Do teams that win the world series see a boost in attendance the following year? What about teams that made the playoffs? Making the playoffs means either being a division winner or a wild card winner.</li>
 --     </ol>
+
+WITH aa AS (
+			SELECT
+				SUM (h.attendance) AS sum_team_attendance
+				, SUM (h.games) AS games
+				, h.year AS year
+				, h.team AS team
+			FROM
+				homegames AS h
+			GROUP BY 3,4)
+SELECT
+	 CASE 
+		WHEN t.w >= 95 THEN '95+ Wins'
+		WHEN t.w BETWEEN 90 AND 94 THEN '90-94 Wins'
+		WHEN t.w BETWEEN 85 AND 89 THEN '85-89 Wins'
+		WHEN t.w BETWEEN 80 AND 84 THEN '80-84 Wins'
+		WHEN t.w BETWEEN 75 AND 79 THEN '75-79 Wins'
+		WHEN t.w BETWEEN 70 AND 74 THEN '70-74 Wins'
+		WHEN t.w BETWEEN 65 AND 69 THEN '65-69 Wins'
+		WHEN t.w BETWEEN 60 AND 64 THEN '60-64 Wins'
+		WHEN t.w <= 59 THEN '59 Or Less Wins'
+		END AS win_range
+	, ROUND(AVG(aa.sum_team_attendance / NULLIF(aa.games,0)),0) AS avg_attendance
+FROM aa 
+LEFT JOIN
+	teams AS t
+ON aa.year = t.yearid
+AND aa.team = t.teamid
+WHERE aa.year > 2000
+GROUP BY 1
+ORDER BY win_range
 
 
 -- 13. It is thought that since left-handed pitchers are more rare, causing batters to face them less often, that they are more effective. Investigate this claim and present evidence to either support or dispute this claim. First, determine just how rare left-handed pitchers are compared with right-handed pitchers. Are left-handed pitchers more likely to win the Cy Young Award? Are they more likely to make it into the hall of fame?
