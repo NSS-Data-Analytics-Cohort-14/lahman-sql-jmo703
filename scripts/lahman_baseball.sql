@@ -296,43 +296,49 @@ ON h.park = p.park
 WHERE h.year = 2016
 ORDER BY avg_attendance DESC
 
--- 9. Which managers have won the TSN Manager of the Year award in both the National League (NL) and the American League (AL)? Give their full name and the teams that they were managing when they won the award.
+-- ** COME BACK TO THIS** 9. Which managers have won the TSN Manager of the Year award in both the National League (NL) and the American League (AL)? Give their full name and the teams that they were managing when they won the award.
+
+SELECT 
+    p.namefirst,
+    p.namelast,
+    a.playerid,
+    a.yearid,
+    a.lgid,
+    m.teamid
+FROM 
+    awardsmanagers AS a
+LEFT JOIN
+    managers AS m
+USING 
+    (playerid, yearid)
+LEFT JOIN
+    people AS p
+ON
+    a.playerid = p.playerid
+WHERE a.playerid IN -- Find managers who have won in both AL and NL
+    ( SELECT
+        a1.playerid
+      FROM
+        awardsmanagers a1
+      JOIN
+        awardsmanagers a2
+      ON
+        a1.playerid = a2.playerid
+      WHERE 
+        a1.lgid = 'AL' 
+        AND a2.lgid = 'NL'
+    )
+ORDER BY a.playerid, a.yearid;
+
+
+-- 10. Find all players who hit their career highest number of home runs in 2016. Consider only players who have played in the league for at least 10 years, and who hit at least one home run in 2016. Report the players' first and last names and the number of home runs they hit in 2016.
 
 SELECT 
 	playerid
 	, yearid
-	, lgid
-	, CASE WHEN lgid = 'AL' THEN 'AL'
-		END AS al
-	, CASE WHEN lgid = 'NL' THEN 'NL'
-		END AS nl
-FROM awardsmanagers
-WHERE playerid IN
-	(SELECT 
-	 playerid
+	, hr
 FROM
-	awardsmanagers
-GROUP BY playerid
-HAVING COUNT (lgid) >= 2);
-------------------------------------
-SELECT
-	a1.playerid
-	,a1.lgid
-	,a2.lgid
-FROM
-	awardsmanagers a1
-JOIN
-	awardsmanagers a2
-ON
-	a1.playerid = a2.playerid
-WHERE a1.lgid = 'AL' AND a2.lgid = 'NL';
-
-SELECT *
-FROM awardsmanagers
-
-
-
--- 10. Find all players who hit their career highest number of home runs in 2016. Consider only players who have played in the league for at least 10 years, and who hit at least one home run in 2016. Report the players' first and last names and the number of home runs they hit in 2016.
+	batting
 
 
 -- **Open-ended questions**
