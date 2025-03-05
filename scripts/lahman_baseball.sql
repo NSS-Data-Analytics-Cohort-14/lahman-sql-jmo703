@@ -207,7 +207,7 @@ LEFT JOIN
 ON 
 	wins.w = t.w
 AND
-	wins.year = t.yearid
+	wins.year = t.yearid)
 
 SELECT 
 	franchid
@@ -489,33 +489,172 @@ WHERE aa.year > 2000
 GROUP BY 1
 ORDER BY win_range
 
--------------------------Increase in attendance after playoffs or WS?
+-------------------------Increase in attendance after playoffs??
 
 WITH team_attendance AS (
 					SELECT
-						homegames.attendance AS attendance
-						, homegames.games AS games
-						, AVG (homegames.attendance / homegames.games) AS attendance_per_game
+						h.year AS year
+						, h.team AS team
+						, SUM (h.attendance) AS total_attendance
+						, SUM (h.games) AS total_games
+						, AVG (h.attendance / h.games) AS avg_attendance_per_game
 					FROM
-						homegames
+						homegames AS h
 					GROUP BY
 						1,2
-	)
-	playoff_teams AS
+	),
+	pt AS (
+				SELECT team
+						, year
+					FROM(
+						SELECT
+							t.teamid AS team
+							, t.yearid AS year
+							, t.divwin AS division_win
+							, t.wcwin AS wildcard_win
+							, CASE WHEN t.divwin = 'Y' THEN 'Y'
+					 			 WHEN t.wcwin = 'Y' THEN 'Y'
+								 ELSE 'N'
+								END AS playoffs
+						FROM teams AS t)
+				WHERE playoffs = 'Y'),
+	wsw AS (
+						SELECT
+							 teams.yearid AS year
+							, teams.teamid AS team
+						FROM
+							teams
+						WHERE teams.wswin = 'Y'
+)
+ SELECT 
+ 	pt.team
+	 , pt.year
+	 , ta1.total_attendance AS attendance_playoff_year
+	 , ta2.total_attendance AS attendance_next_year
+	 , ((ta2.total_attendance - ta1.total_attendance) / ta1.total_attendance * 1.0)
+ FROM
+ 	pt
+LEFT JOIN
+	team_attendance AS ta1
+ON
+	pt.team = ta1.team
+AND
+	pt.year = ta1.year
+LEFT JOIN
+	team_attendance AS ta2
+ON 
+	pt.team = ta2.team
+AND
+	pt.year + 1 = ta2.year
+;
+
+----------------------------- Increase after WS win? 
+WITH team_attendance AS (
+					SELECT
+						h.year AS year
+						, h.team AS team
+						, SUM (h.attendance) AS total_attendance
+						, SUM (h.games) AS total_games
+						, AVG (h.attendance / h.games) AS avg_attendance_per_game
+					FROM
+						homegames AS h
+					GROUP BY
+						1,2
+	),
+	playoff_teams AS (
 				SELECT
-					teams.teamid AS team
-					, teams.yearid AS year
-					, teams.divwin AS division_win
-					, teams.wcwin AS wildcard_win
-					, CASE WHEN teams.divwin = 'Y' THEN 'Y'
-					 		 WHEN teams.wcwin = 'Y' THEN 'Y'
+					t.teamid AS team
+					, t.yearid AS year
+					, t.divwin AS division_win
+					, t.wcwin AS wildcard_win
+					, CASE WHEN t.divwin = 'Y' THEN 'Y'
+					 		 WHEN t.wcwin = 'Y' THEN 'Y'
 					 ELSE 'N'
 					END AS playoffs
-				FROM teams
-				 ----------------------LEFT OFF HERE ON SATURDAY!---------------------
-					
-	world_series_winners AS
+				FROM teams AS t
+					),
+	wsw AS (
+						SELECT
+							 teams.yearid AS year
+							, teams.teamid AS team
+						FROM
+							teams
+						WHERE teams.wswin = 'Y'
+)
+ SELECT 
+ 	wsw.team
+	 , wsw.year
+	 , ta1.total_attendance
+	 , ta2.total_attendance
+ FROM
+ 	wsw
+LEFT JOIN
+	team_attendance AS ta1
+ON
+	wsw.team = ta1.team
+AND
+	wsw.year = ta1.year
+LEFT JOIN
+	team_attendance AS ta2
+ON 
+	wsw.team = ta2.team
+AND
+	wsw.year + 1 = ta2.year
+;
+
 
 -- 13. It is thought that since left-handed pitchers are more rare, causing batters to face them less often, that they are more effective. Investigate this claim and present evidence to either support or dispute this claim. First, determine just how rare left-handed pitchers are compared with right-handed pitchers. Are left-handed pitchers more likely to win the Cy Young Award? Are they more likely to make it into the hall of fame?
 
-  
+WITH L AS(
+			SELECT
+			  playerid
+			, throws
+			FROM
+			  people
+			WHERE 
+			  throws = 'L')
+SELECT *
+FROM L
+-----------------------------------Comparing Stats lefty v righty vv------------------------------
+SELECT 
+	AVG(era) AS era
+	, AVG(er) AS er
+	, SUM (ipouts)/3 AS innings_pitched
+	, throws
+FROM 
+	pitching AS pi
+LEFT JOIN 	
+	people AS p
+ON 
+	pi.playerid = p.playerid
+WHERE throws IN ('L', 'R')
+GROUP BY 4
+
+------------------------------------ Comparing rarity of lefty v righty P vv ------------------------
+
+SELECT 
+	throws
+	,COUNT (throws)
+FROM 
+	pitching AS pi
+LEFT JOIN 	
+	people AS p
+ON 
+	pi.playerid = p.playerid
+WHERE throws IN ( 'L' , 'R')
+GROUP BY (throws)
+
+----------------------------------- Lefty or Righty Cy Young? ---------------------------------------
+
+SELECT 
+	COUNT (awardid)
+	, throws
+FROM awardsplayers AS a
+LEFT JOIN
+	people AS p
+ON
+a.playerid = p.playerid
+WHERE awardid = 'Cy Young Award'
+GROUP BY throws
+
+------------------------------------ Lefty or Righty Hall of Fame
