@@ -657,4 +657,31 @@ a.playerid = p.playerid
 WHERE awardid = 'Cy Young Award'
 GROUP BY throws
 
------------------------------------- Lefty or Righty Hall of Fame
+------------------------------------ Lefty or Righty Hall of Fame-------------------------------------
+
+WITH p AS(
+SELECT
+	playerid
+FROM
+	pitching)
+SELECT
+	COUNT(DISTINCT(p.playerid)) AS hall_of_fame_pitchers
+	, pe.throws AS throwing_hand
+FROM
+	p
+LEFT JOIN ----------- JOINING THE CTE TO THE HALL OF FAME TABLE TO GET THEIR HOF STATUS
+	halloffame AS h
+ON
+	p.playerid = h.playerid
+LEFT JOIN ----------- JOINING THE CTE TO THE PEOPLE TABLE TO GET THEIR THROWING HAND
+	people AS pe
+ON
+	p.playerid = pe.playerid
+WHERE
+	p.playerid IN ( ------------- SUBQUERY TO MATCH THE PLAYERID TO PLAYERID IN THE HOF
+		SELECT
+			playerid
+		FROM
+			halloffame)
+GROUP BY 2
+	
