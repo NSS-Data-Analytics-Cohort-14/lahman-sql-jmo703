@@ -3,8 +3,8 @@
 
 SELECT 
 	MIN (year)
-	, MAX (year)
-	, MAX (year) - MIN (year) AS num_years
+	, MAX (year) 
+	, COUNT(DISTINCT(year)) AS num_years
 FROM homegames;
 
 1871 - 2016
@@ -495,7 +495,7 @@ WITH team_attendance AS (
 					SELECT
 						h.year AS year
 						, h.team AS team
-						, SUM (h.attendance) AS total_attendance
+						, CAST(SUM (h.attendance)AS DECIMAL) AS total_attendance
 						, SUM (h.games) AS total_games
 						, AVG (h.attendance / h.games) AS avg_attendance_per_game
 					FROM
@@ -531,7 +531,7 @@ WITH team_attendance AS (
 	 , pt.year
 	 , ta1.total_attendance AS attendance_playoff_year
 	 , ta2.total_attendance AS attendance_next_year
-	 , ((ta2.total_attendance - ta1.total_attendance) / ta1.total_attendance * 1.0)
+	 , ROUND(((ta2.total_attendance - ta1.total_attendance) / ta1.total_attendance * 100.00),2)
  FROM
  	pt
 LEFT JOIN
@@ -546,6 +546,7 @@ ON
 	pt.team = ta2.team
 AND
 	pt.year + 1 = ta2.year
+ORDER BY (ROUND(((ta2.total_attendance - ta1.total_attendance) / ta1.total_attendance * 100.00),2)) DESC NULLS LAST
 ;
 
 ----------------------------- Increase after WS win? 
