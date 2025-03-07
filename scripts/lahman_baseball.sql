@@ -156,9 +156,9 @@ SELECT
 FROM batting AS b;
 
 SELECT 
-	p.namefirst
-	, p.namelast
-	, b.sb
+	p.namefirst AS first_name
+	, p.namelast AS last_name
+	, b.sb AS stolen_bases
 	, total_steal_attempts
 	, ROUND(CAST(b.sb / total_steal_attempts * 100 AS DECIMAL),2) AS sb_percent
 FROM (
@@ -174,7 +174,7 @@ LEFT JOIN people AS p
 ON b.playerid = p.playerid
 WHERE b.sb <> 0
 AND b.yearid = 2016
-AND total_steal_attempts > 20
+AND total_steal_attempts >= 20
 ORDER BY sb_percent DESC
 
 Chris Owings had the greatest steal % in 2016, but Billy Hamilton had a greater impact on his team taking 58 bags
