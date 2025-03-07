@@ -370,7 +370,7 @@ ORDER BY avg_attendance DESC
 
 -- ** COME BACK TO THIS** 9. Which managers have won the TSN Manager of the Year award in both the National League (NL) and the American League (AL)? Give their full name and the teams that they were managing when they won the award.
 
-SELECT 
+SELECT DISTINCT
     p.namefirst,
     p.namelast,
     a.playerid,
@@ -388,7 +388,7 @@ LEFT JOIN
 ON
     a.playerid = p.playerid
 WHERE a.playerid IN -- Find managers who have won in both AL and NL
-    ( SELECT DISTINCT
+    ( SELECT
         a1.playerid
       FROM
         awardsmanagers a1
@@ -401,6 +401,18 @@ WHERE a.playerid IN -- Find managers who have won in both AL and NL
         AND a2.lgid = 'NL'
     )
 ORDER BY a.playerid, a.yearid;
+-----------------------------------------------------------------
+SELECT
+	*
+FROM
+	awardsmanagers a1
+INNER JOIN
+	awardsmanagers a2
+ON
+	a1.playerid = a2.playerid
+WHERE
+	a1.lgid = 'AL'
+	AND a2.lgid = 'NL'
 
 --------------------------WALKTHROUGHvv--------------------------
 
