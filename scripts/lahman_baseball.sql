@@ -242,7 +242,7 @@ FROM(
 		yearid
 			BETWEEN	
 				1970 AND 2016
-)
+),
 
 SELECT 
 	ws_and_most_wins
@@ -277,6 +277,39 @@ FROM(
 								1969.5 AND 2016.5
 )))
 )
+
+
+------------------------ AFTER WALKTHROUGH vv
+
+with most_wins AS (
+				SELECT
+					name
+					, wswin
+					, w
+					, yearid
+					, RANK () OVER (PARTITION BY yearid ORDER BY w DESC) AS rank_wins
+				FROM teams
+				WHERE yearid > 1969
+					AND yearid NOT IN (1981)
+				ORDER BY yearid 
+),
+
+set_up AS (
+			SELECT
+				SUM(CASE
+					WHEN wswin = 'Y' AND rank_wins = 1 THEN 1
+					ELSE 0
+				END) AS ws_and_most_wins
+				, COUNT (DISTINCT (yearid)) AS num_years
+			FROM 
+				most_wins
+)
+SELECT
+	ws_and_most_wins
+	, num_years
+	, ROUND(ws_and_most_wins::NUMERIC / num_years::NUMERIC, 2)
+FROM
+	set_up
 
 -- 8. Using the attendance figures from the homegames table, find the teams and parks which had the top 5 average attendance per game in 2016 (where average attendance is defined as total attendance divided by number of games). Only consider parks where there were at least 10 games played. Report the park name, team name, and average attendance. Repeat for the lowest 5 average attendance.
 
