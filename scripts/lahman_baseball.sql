@@ -12,12 +12,11 @@ FROM homegames;
 -- 2. Find the name and height of the shortest player in the database. How many games did he play in? What is the name of the team for which he played?
    
 SELECT
-	p.namefirst
-	, p.namelast
-	, p.height
-	, a.g_all
-	, t.teamid
-	, t.franchid
+	p.namefirst AS first_name
+	, p.namelast AS last_name
+	, p.height AS height_in_inches
+	, a.g_all AS games_played
+	, t.name
 FROM
 	appearances AS a
 LEFT JOIN
