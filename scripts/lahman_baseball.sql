@@ -36,10 +36,11 @@ WITH collegeid AS
 	(SELECT 
 		DISTINCT (playerid)
 		, schoolid
-		FROM collegeplaying) 
+	FROM 
+		collegeplaying) 
 SELECT
-	p.namefirst
-	, p.namelast
+	p.namefirst AS first_name
+	, p.namelast AS last_name
 	, sch.schoolname AS college
 	, SUM(sal.salary) AS total_salary
 FROM
@@ -57,7 +58,7 @@ LEFT JOIN
 ON
 	collegeid.schoolid = sch.schoolid
 GROUP BY 1,2,3
-HAVING sch.schoolname LIKE '%Vanderbilt%'
+HAVING LOWER(sch.schoolname) LIKE '%vand%'
 ORDER BY SUM(sal.salary) DESC NULLS LAST;
 
 David Price at the time had earned $81,851,296
