@@ -135,6 +135,17 @@ There is an increasing trend in K's per game
 There is an increasing trend in HR's per game Especially a spike during the steroid era
 
 
+SELECT distinct
+	yearid / 10 * 10 AS decades
+	, round(SUM (so :: numeric) / (sum (g :: numeric)/2),2) AS avg_so
+	, round(SUM (hr :: numeric) / (sum (g :: numeric)/2),2) AS avg_hr
+FROM
+	teams
+WHERE
+	yearid >= 1920
+GROUP BY 1
+ORDER BY decades DESC
+
 -- 6. Find the player who had the most success stealing bases in 2016, where __success__ is measured as the percentage of stolen base attempts which are successful. (A stolen base attempt results either in a stolen base or being caught stealing.) Consider only players who attempted _at least_ 20 stolen bases.
 
 SELECT 
