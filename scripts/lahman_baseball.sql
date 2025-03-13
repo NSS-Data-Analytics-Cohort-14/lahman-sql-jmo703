@@ -89,29 +89,6 @@ Outfielders have the 3rd most with 29,560
    
 -- 5. Find the average number of strikeouts per game by decade since 1920. Round the numbers you report to 2 decimal places. Do the same for home runs per game. Do you see any trends?
 
-SELECT 
-	decade
-	, total_strikeouts
-	, total_games
-	, ROUND(total_strikeouts / (total_games/2),2) AS ks_per_game
-FROM (SELECT 
-	yearid / 10 * 10 AS decade
-	, CAST (SUM (so) AS DECIMAL) AS total_strikeouts
-	, CAST (SUM (gs) AS DECIMAL) AS total_games
-	, SUM (so) / SUM (gs)
-FROM pitching
-GROUP BY 1)
-GROUP BY 1,2,3,4
-
-SELECT 
-	yearid/10 * 10 AS decade
-	, CAST (SUM (b.hr) AS DECIMAL) AS total_homeruns
-	, CAST (SUM (p.gs) AS DECIMAL) AS total_games
-FROM batting AS b
-LEFT JOIN pitching AS p
-USING (playerid, yearid)
-GROUP BY 1;
-
 SELECT
 	decade
 	, total_homeruns
@@ -134,26 +111,8 @@ ORDER BY decade DESC
 There is an increasing trend in K's per game
 There is an increasing trend in HR's per game Especially a spike during the steroid era
 
-
-SELECT distinct
-	yearid / 10 * 10 AS decades
-	, round(SUM (so :: numeric) / (sum (g :: numeric)/2),2) AS avg_so
-	, round(SUM (hr :: numeric) / (sum (g :: numeric)/2),2) AS avg_hr
-FROM
-	teams
-WHERE
-	yearid >= 1920
-GROUP BY 1
-ORDER BY decades DESC
-
 -- 6. Find the player who had the most success stealing bases in 2016, where __success__ is measured as the percentage of stolen base attempts which are successful. (A stolen base attempt results either in a stolen base or being caught stealing.) Consider only players who attempted _at least_ 20 stolen bases.
 
-SELECT 
-	playerid
-	, b.sb
-	, b.cs
-	, b.sb + b.cs AS total_steal_attempts
-FROM batting AS b;
 
 SELECT 
 	p.namefirst AS first_name
@@ -181,106 +140,6 @@ Chris Owings had the greatest steal % in 2016, but Billy Hamilton had a greater 
 
 -- 7.  From 1970 – 2016, what is the largest number of wins for a team that did not win the world series? What is the smallest number of wins for a team that did win the world series? Doing this will probably result in an unusually small number of wins for a world series champion – determine why this is the case. Then redo your query, excluding the problem year. How often from 1970 – 2016 was it the case that a team with the most wins also won the world series? What percentage of the time?
 
-
-SELECT -- LOWEST # OF WINS FOR WS CHAMP
-	franchid
-	, yearid
-	, w
-FROM teams
-WHERE wswin = 'Y'
-AND yearid BETWEEN 1970 AND 2016
-AND yearid NOT IN (1981)
-ORDER BY w;
-
-SELECT -- MOST WINS FOR NON WS CHAMP
-	franchid
-	, yearid
-	, w
-FROM teams
-WHERE wswin = 'N'
-AND yearid BETWEEN 1970 AND 2016
-ORDER BY w DESC;
-
-WITH wins AS (
-	SELECT 
-		 MAX (w) AS w
-		, yearid AS year
-	FROM teams
-	GROUP BY 2)
-SELECT
-	wins.w
-	, wins.year
-	, t.franchid
-FROM 
-	wins 
-LEFT JOIN
-	teams AS t
-ON 
-	wins.w = t.w
-AND
-	wins.year = t.yearid)
-
-SELECT 
-	franchid
-	, yearid
-	, wswin
-	, w
-	, yearly_w_rank
-	, CASE WHEN (wswin = 'Y'AND yearly_w_rank = 1) THEN 1
-		ELSE 0
-	END AS double_w
-FROM(
-	SELECT 
-		franchid
-		, yearid
-		, wswin
-		, w
-		, ROW_NUMBER() OVER(PARTITION BY yearid ORDER BY w DESC) AS yearly_w_rank
-	FROM
-		teams
-	WHERE 
-		yearid
-			BETWEEN	
-				1970 AND 2016
-),
-
-SELECT 
-	ws_and_most_wins
-	, total
-	, ROUND(CAST (ws_and_most_wins AS DECIMAL) / CAST (total AS DECIMAL) *100,2) AS pct_ws_and_regular_season_win_leader
-FROM(
-	SELECT 
-		SUM (double_w) AS ws_and_most_wins
-		, COUNT (w) AS total
-	FROM (
-		SELECT 
-		franchid
-		, yearid
-		, wswin
-		, w
-		, yearly_w_rank
-		, CASE WHEN (wswin = 'Y'AND yearly_w_rank = 1) THEN 1
-			ELSE 0
-			END AS double_w
-				FROM(
-					SELECT 
-						franchid
-						, yearid
-						, wswin
-						, w
-						, ROW_NUMBER() OVER(PARTITION BY yearid ORDER BY w DESC) AS yearly_w_rank
-							FROM
-								teams
-							WHERE 
-								yearid
-							BETWEEN	
-								1969.5 AND 2016.5
-)))
-)
-
-
------------------------- AFTER WALKTHROUGH vv
-
 with most_wins AS (
 				SELECT
 					name
@@ -307,51 +166,11 @@ set_up AS (
 SELECT
 	ws_and_most_wins
 	, num_years
-	, ROUND(ws_and_most_wins::NUMERIC / num_years::NUMERIC, 2)
+	, ROUND(ws_and_most_wins::NUMERIC / num_years::NUMERIC, 2) AS percentage
 FROM
 	set_up
 
 -- 8. Using the attendance figures from the homegames table, find the teams and parks which had the top 5 average attendance per game in 2016 (where average attendance is defined as total attendance divided by number of games). Only consider parks where there were at least 10 games played. Report the park name, team name, and average attendance. Repeat for the lowest 5 average attendance.
-
-(SELECT 
-	p.park_name
-	, h.attendance / 81 AS avg_attendance
-	, t.name
-	, 'top 5'
-FROM 
-	homegames AS h
-LEFT JOIN
-	parks AS p
-ON h.park = p.park
-LEFT JOIN
-	teams AS t
-ON h.team = t.teamid
-AND h.year = t.yearid
-WHERE year = 2016
-AND h.games > 10
-ORDER BY h.attendance DESC
-limit 5
-)
-UNION
-
-(SELECT 
-	p.park_name
-	, h.attendance / 81 AS avg_attendance
-	, t.name
-	, 'bottom 5'
-FROM 
-	homegames AS h
-LEFT JOIN
-	parks AS p
-ON h.park = p.park
-LEFT JOIN
-	teams AS t
-ON h.team = t.teamid
-AND h.year = t.yearid
-WHERE year = 2016
-AND h.games > 10
-ORDER BY h.attendance DESC
-limit 5)
 
 SELECT 
 	DISTINCT (h.team)
@@ -369,52 +188,6 @@ WHERE h.year = 2016
 ORDER BY avg_attendance DESC
 
 -- ** COME BACK TO THIS** 9. Which managers have won the TSN Manager of the Year award in both the National League (NL) and the American League (AL)? Give their full name and the teams that they were managing when they won the award.
-
-SELECT DISTINCT
-    p.namefirst,
-    p.namelast,
-    a.playerid,
-    a.yearid,
-    a.lgid,
-    m.teamid
-FROM 
-    awardsmanagers AS a
-LEFT JOIN
-    managers AS m
-USING 
-    (playerid, yearid)
-LEFT JOIN
-    people AS p
-ON
-    a.playerid = p.playerid
-WHERE a.playerid IN -- Find managers who have won in both AL and NL
-    ( SELECT
-        a1.playerid
-      FROM
-        awardsmanagers a1
-      JOIN
-        awardsmanagers a2
-      ON
-        a1.playerid = a2.playerid
-      WHERE 
-        a1.lgid = 'AL' 
-        AND a2.lgid = 'NL'
-    )
-ORDER BY a.playerid, a.yearid;
------------------------------------------------------------------
-SELECT
-	*
-FROM
-	awardsmanagers a1
-INNER JOIN
-	awardsmanagers a2
-ON
-	a1.playerid = a2.playerid
-WHERE
-	a1.lgid = 'AL'
-	AND a2.lgid = 'NL'
-
---------------------------WALKTHROUGHvv--------------------------
 
 SELECT DISTINCT
 	a.lgid,
@@ -496,13 +269,7 @@ FROM (
 LEFT JOIN
 	people AS p
 ON n.playerid = p.playerid
-ORDER BY n.hr DESC
-
-SELECT
-	COUNT (yearid)
-	, playerid
-FROM appearances
-GROUP BY 2
+ORDER BY n.hr DESC;
 
 -- **Open-ended questions**
 
@@ -571,6 +338,8 @@ WHERE
 	s.yearid >= 2010
 GROUP BY 1
 ORDER BY win_range DESC
+
+
 -- 12. In this question, you will explore the connection between number of wins and attendance.
 --     <ol type="a">
 --       <li>Does there appear to be any correlation between attendance at home games and number of wins? </li>
